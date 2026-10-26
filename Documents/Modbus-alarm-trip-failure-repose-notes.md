@@ -304,3 +304,225 @@ Các solenoid trên sử dụng `DC24V`, dòng tiêu thụ khoảng `0,7 A`. `5V
 - Governor motor dùng surge killer `ERZV10D390` của Panasonic.
 - Trip switch phải có điện trở giám sát `3,9 kΩ, 1/4 W`. Không được bỏ điện trở này hoặc thay sai trị số vì DECCS có thể báo disconnection/failure hoặc mất khả năng giám sát đứt dây.
 - Khi đo cách điện hoặc cấp nguồn thử, phải tách các module/cảm biến điện tử và tuân thủ hướng dẫn nhà sản xuất để tránh làm hỏng transmitter, diode và surge suppressor.
+
+## Quy tắc đọc và giải mã Tag
+
+Hệ thống tag trong bộ tài liệu là sự kết hợp giữa quy ước đo lường/điện phổ biến và mã dịch vụ riêng của Daihatsu. Không được giả định toàn bộ tag tuân thủ tuyệt đối ISA-5.1.
+
+Cấu trúc thường gặp:
+
+```text
+[Đại lượng hoặc loại thiết bị] + [Môi chất/hệ thống] + [Vị trí hoặc số thứ tự]
+```
+
+Khi có xung đột giữa cách giải thích theo tiêu chuẩn và nội dung bản vẽ, phải ưu tiên các cột `Name`, `Use`, `Remark` và `Contact` của Daihatsu.
+
+### Các chữ cái thường gặp
+
+| Ký hiệu | Ý nghĩa trong bộ tài liệu |
+|---|---|
+| `P` | Pressure — áp suất |
+| `T` ở đầu tag | Temperature — nhiệt độ |
+| `T` sau `P` | Transmitter — bộ phát tín hiệu |
+| `TR` | Temperature sensor theo quy ước Daihatsu, nhiều khả năng là cảm biến điện trở |
+| `S` | Switch hoặc Safety, tùy vị trí và ngữ cảnh |
+| `V` | Valve — van |
+| `M` | Motor |
+| `F` | Fuel/fuel oil khi là hậu tố hệ thống |
+| `Q` | Mã Daihatsu cho hệ thống dầu bôi trơn trong bản vẽ này |
+| `W` | Water — nước làm mát |
+| `H` | High-temperature circuit — vòng nhiệt độ cao |
+| `L` | Low-temperature circuit — vòng nhiệt độ thấp |
+| `I` | Inlet — đầu vào |
+| `O` | Outlet — đầu ra |
+| `AS` | Starting Air — khí khởi động |
+| `TC` hoặc `T/C` trong tên hệ thống | Turbocharger; cần phân biệt với tag `TC` của Turning Safety Switch |
+
+Cùng một chữ có thể mang nghĩa khác nhau tùy vị trí. Ví dụ `T` đầu tag thường là Temperature, nhưng `T` trong `PT` là Transmitter.
+
+### Nhóm pressure transmitter
+
+Cấu trúc chung:
+
+```text
+PT + hậu tố dịch vụ
+P = Pressure
+T = Transmitter
+```
+
+| Tag | Ý nghĩa |
+|---|---|
+| `PTQ` | Transmitter áp suất dầu bôi trơn đầu vào động cơ |
+| `PTF` | Transmitter áp suất dầu nhiên liệu đầu vào động cơ |
+| `PTAS` | Transmitter áp suất khí khởi động đầu vào động cơ |
+| `PTWH` | Transmitter áp suất nước HT đầu vào động cơ |
+| `PTWL` | Transmitter áp suất nước LT đầu vào động cơ |
+
+Phần `PT` phù hợp với quy ước Pressure Transmitter phổ biến. Các hậu tố `Q`, `F`, `AS`, `WH` và `WL` là mã dịch vụ của Daihatsu. Đây là các kênh analog phục vụ hiển thị và Alarm; chúng không mặc nhiên là kênh Trip.
+
+### Nhóm cảm biến nhiệt độ
+
+Trong tài liệu này, `TR` được dùng cho temperature sensor. Nếu áp dụng ISA-5.1 thuần túy, `TR` có thể được hiểu là Temperature Recorder, nhưng cách hiểu đó không phù hợp với tên thiết bị trên bản vẽ. Phải sử dụng định nghĩa của Daihatsu.
+
+| Tag | Cách giải thích |
+|---|---|
+| `TRC1–TRC6` | Cảm biến nhiệt độ khí xả của từng xy-lanh 1–6 |
+| `TRTI(1)` | Cảm biến nhiệt độ khí xả đầu vào turbo, nhóm xy-lanh 1–3 |
+| `TRTI(2)` | Cảm biến nhiệt độ khí xả đầu vào turbo, nhóm xy-lanh 4–6 |
+| `TRTO` | Cảm biến nhiệt độ khí xả đầu ra turbo |
+| `TRQ` | Cảm biến nhiệt độ dầu bôi trơn đầu vào động cơ |
+| `TRWHO` | Cảm biến nhiệt độ nước HT đầu ra động cơ |
+
+Ví dụ giải mã:
+
+```text
+TRWHO
+TR = temperature sensor theo quy ước Daihatsu
+W  = water
+H  = high-temperature circuit
+O  = outlet
+```
+
+```text
+TRTI / TRTO
+TR = temperature sensor
+T  = turbocharger
+I  = inlet
+O  = outlet
+```
+
+### Nhóm switch và mã chức năng dạng số
+
+| Tag | Thiết bị/chức năng |
+|---|---|
+| `63Q2` | Pressure switch dầu bôi trơn đầu vào; Emergency Stop dưới 0,30 MPa |
+| `63QDM` | Differential-pressure switch của lọc dầu backwash |
+| `63QT` | Pressure switch dầu bôi trơn đầu vào turbo |
+| `26WH2` | Temperature switch nước HT đầu ra; Emergency Stop trên 95°C |
+| `33QL` | Level switch báo mức dầu sump tank thấp |
+| `33F` | Level/leak switch phát hiện rò rỉ hoặc vỡ ống dầu cao áp |
+
+Ý nghĩa sử dụng của các số đầu trong sơ đồ:
+
+| Số | Nhóm chức năng |
+|---:|---|
+| `26` | Thiết bị/công tắc nhiệt |
+| `33` | Switch liên quan vị trí hoặc mức |
+| `63` | Pressure switch |
+| `88` | Thiết bị phụ trợ/van điện từ trong trình tự khởi động của hệ thống này |
+| `5` | Chức năng Stop/Shutdown trong hệ thống này |
+
+Phần chữ và số phía sau là mã dịch vụ, vị trí hoặc kênh của Daihatsu. Không được kết luận chức năng chỉ từ số đầu; phải đối chiếu `Name` và `Use`.
+
+### Tag Start, Stop và điều khiển
+
+| Tag | Ý nghĩa |
+|---|---|
+| `88V` | Starting solenoid valve |
+| `88L` | Fuel-oil control solenoid valve trong trình tự khởi động |
+| `5V` | Shutdown solenoid valve — Control |
+| `5S` | Shutdown solenoid valve — Safety & Control |
+| `SVB` | Solenoid valve của bypass bộ làm mát khí LT |
+| `BO` | Blow-off valve |
+| `GM` | Governor motor |
+| `FR` | Fuel-rack position transmitter/indicator |
+
+`5V` và `5S` cắt nhiên liệu khi cuộn dây được cấp điện. Việc có hai đường thể hiện kênh Control và kênh Safety & Control riêng.
+
+### Tag tốc độ và interlock
+
+| Tag | Ý nghĩa/nguyên tắc |
+|---|---|
+| `SSE1`, `SSE2` | Hai speed sensor dạng pulse, dùng để phát hiện tốc độ và đáp ứng điều kiện Ready to Start |
+| `HS` | Handle Switch; ở RUN thì `2–4` ON và `1–2` OFF |
+| `TC` | Turning Safety Switch; khi turning bar đang dùng thì `1–3` OFF, ngăn khởi động |
+| `GM` | Governor Motor điều khiển tốc độ, nguồn DC24V có battery backup |
+
+### Cách đọc trạng thái tiếp điểm
+
+Sơ đồ ghi rõ các tiếp điểm được vẽ ở trạng thái động cơ chạy bình thường. Không được chỉ nhìn hình tiếp điểm; phải đọc thêm cột `Contact` và điều kiện trong `Remark`.
+
+| Ghi chú | Ý nghĩa |
+|---|---|
+| `Normal open` | Bình thường hở |
+| `Normal close` | Bình thường đóng |
+| `(1–2) ON` | Chân 1 và 2 thông nhau khi điều kiện tác động |
+| `(1–3) OFF` | Chân 1 và 3 mở ra khi điều kiện tác động |
+| `(A–B) OFF` | Chân A và B mở ra khi điều kiện tác động |
+
+Ví dụ:
+
+- `63Q2`: normally open; áp suất dưới 0,30 MPa làm `1–2` ON và tạo Emergency Stop.
+- `63QDM`: normally closed; chênh áp trên 0,09 MPa làm `1–3` OFF và tạo Alarm.
+- `33F`: normally closed; phát hiện rò rỉ làm `1–2` OFF và tạo Alarm.
+
+Một số mạch tác động bằng cách mở tiếp điểm đang đóng để hỗ trợ logic fail-safe và giám sát đứt dây.
+
+### Nguyên tắc tách kênh analog và Trip
+
+Không được đồng nhất sensor/transmitter analog với safety switch:
+
+```text
+PTQ
+├── Đo analog và hiển thị: 30025
+├── Alarm áp suất dưới 0,35 MPa
+└── Sensor failure: 10089
+
+63Q2
+├── Pressure switch vật lý độc lập
+├── Emergency Stop dưới 0,30 MPa: 10021
+└── Giám sát đứt dây switch: 10062
+```
+
+Tương tự:
+
+```text
+TRWHO
+├── Đo analog và Alarm trên 90°C
+└── Sensor failure riêng
+
+26WH2
+└── Temperature switch độc lập, Emergency Stop trên 95°C
+```
+
+Vì vậy `Sensor Failure` không mặc nhiên bằng `Trip`. Phải xác định thiết bị nào báo Failure và switch vật lý nào thực sự tạo Trip.
+
+### Trình tự giải thích một tag mới
+
+1. Tìm tag trong cột `Mark`.
+2. Đọc tên đầy đủ tại cột `Name`.
+3. Xác định `Use`: Indication, Alarm, Emergency Stop, Control hay Safety.
+4. Đọc ngưỡng hoặc điều kiện trong `Remark`.
+5. Đọc trạng thái chân trong `Contact`.
+6. Xác định thiết bị là transmitter analog, temperature sensor hay switch số.
+7. Đối chiếu chân đấu tại junction box.
+8. Sau cùng mới liên hệ tag với địa chỉ Modbus.
+
+Khi đánh giá Failure/Trip cần trả lời đủ:
+
+- Sensor hoặc transmitter nào đang báo Failure?
+- Switch nào thực sự tạo Trip?
+- Hai kênh có độc lập về phần cứng không?
+- Có dùng chung nguồn hoặc dây không?
+- Logic DECCS có xử lý fail-safe bổ sung không?
+
+### Kết luận về hệ thống tag
+
+```text
+Quy ước ISA/điện phổ biến
+        +
+Mã môi chất và vị trí riêng của Daihatsu
+        +
+Số kênh hoặc số thiết bị
+```
+
+Ví dụ:
+
+- `PTQ`: Pressure Transmitter — dầu bôi trơn.
+- `TRWHO`: Temperature sensor — Water — High-temperature — Outlet.
+- `63Q2`: Pressure switch — dầu bôi trơn — kênh/thiết bị số 2.
+- `26WH2`: Thermal switch — Water High-temperature — kênh/thiết bị số 2.
+- `88V`: Starting solenoid valve.
+- `5S`: Shutdown solenoid thuộc kênh Safety & Control.
+
+Ý nghĩa chính xác cuối cùng phải lấy từ bảng `Mark/Name/Use/Remark/Contact` của Daihatsu, không chỉ từ cách giải mã theo ISA.
