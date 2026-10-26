@@ -93,7 +93,7 @@ Công tắc áp suất thấp
     └── Đứt dây công tắc: 10062
 ```
 
-Việc tài liệu có riêng `10062` cho lỗi đứt dây công tắc áp suất thấp là dấu hiệu cho thấy `10021` có thể được tạo từ một công tắc bảo vệ độc lập, thay vì trực tiếp từ cảm biến analog `10089/30025`.
+Sơ đồ `Wiring Diagram.pdf` xác nhận có hai thiết bị vật lý riêng: transmitter analog `PTQ` và công tắc Trip áp suất thấp `63Q2`. Điều này củng cố rằng `10021` được tạo từ kênh công tắc bảo vệ độc lập, thay vì trực tiếp từ cảm biến analog liên quan đến `10089/30025`.
 
 ### Khi nào động cơ vẫn có thể dừng?
 
@@ -107,7 +107,7 @@ Việc tài liệu có riêng `10062` cho lỗi đứt dây công tắc áp su�
 
 Theo cấu trúc của Modbus List, nếu chỉ riêng cảm biến analog `10089` bị đứt dây, còn công tắc áp suất thấp và mạch `10021/10062` vẫn bình thường, thì hệ thống dự kiến báo `10089 = Failure` nhưng không nhất thiết kích hoạt `10021 = Trip`.
 
-Đây là kết luận suy luận từ danh sách Modbus, chưa phải xác nhận tuyệt đối về logic nội bộ. Cần kiểm tra thêm tài liệu Cause & Effect, Alarm/Trip List, sơ đồ đấu dây hoặc logic DECCS để xác nhận nguồn tạo tín hiệu `10021` và hành động khi `10089` bị lỗi.
+Sơ đồ đấu dây đã xác nhận sự tách biệt phần cứng giữa `PTQ` và `63Q2`; tuy nhiên vẫn cần Cause & Effect hoặc logic DECCS để xác nhận toàn bộ xử lý phần mềm khi một trong hai kênh bị lỗi.
 
 ## Nguyên nhân làm động cơ dừng khi đang chạy
 
@@ -210,3 +210,97 @@ Khi tất cả điều kiện được thỏa mãn:
 5. Kiểm tra không có Trip hoặc alarm nghiêm trọng.
 6. Xác nhận trạng thái `READY TO START` hoặc `10018 = 1`.
 7. Sau đó mới nhấn Local Start hoặc đóng tín hiệu Remote Start.
+
+## Thông tin quan trọng từ Wiring Diagram
+
+Nguồn: `Wiring Diagram.pdf` — Wiring Diagram 6DE-18, Parts No. `AQA10036419`, revision B, ngày 2022-08-01. Sơ đồ là một sheet tổng hợp và ghi rõ trạng thái tiếp điểm được vẽ là trạng thái động cơ chạy bình thường.
+
+### Hai cấp giám sát áp suất dầu bôi trơn
+
+Sơ đồ xác nhận hai thiết bị độc lập:
+
+| Mark | Thiết bị | Chức năng | Ngưỡng |
+|---|---|---|---|
+| `PTQ` | Lub. oil engine inlet pressure transmitter | Hiển thị và Alarm analog | Dưới `0,35 MPa` |
+| `63Q2` | Lub. oil engine inlet pressure switch | Emergency Stop | Dưới `0,30 MPa` |
+
+`PTQ` là transmitter hai dây riêng, còn `63Q2` là pressure switch có tiếp điểm riêng. Vì vậy:
+
+- Hỏng hoặc đứt dây `PTQ` dự kiến tác động kênh sensor failure `10089` và làm giá trị `30025` không đáng tin cậy.
+- Trip áp suất dầu thấp `10021` nhiều khả năng đến từ `63Q2`.
+- Giám sát đứt dây pressure switch `10062` liên quan đến mạch `63Q2`.
+- Chỉ hỏng `PTQ` không trực tiếp đóng tiếp điểm Trip của `63Q2`; động cơ chỉ Trip nếu logic DECCS có xử lý fail-safe bổ sung hoặc kênh `63Q2` cũng tác động.
+
+### Hai cấp giám sát nhiệt độ nước làm mát HT
+
+| Mark | Thiết bị | Chức năng | Ngưỡng |
+|---|---|---|---|
+| `TRWHO` | HTCW engine outlet temperature sensor | Hiển thị và Alarm | Trên `90°C` |
+| `26WH2` | HTCW engine outlet temperature switch | Emergency Stop | Trên `95°C` |
+
+Đây cũng là cấu trúc hai kênh: cảm biến analog cho hiển thị/cảnh báo và công tắc riêng cho Emergency Stop. `26WH2` là tiếp điểm thường mở; khi nhiệt độ trên 95°C thì tiếp điểm `1–3` ON.
+
+### Các ngưỡng hiển thị và Alarm
+
+| Mark | Đại lượng | Ngưỡng Alarm |
+|---|---|---|
+| `TRC1–TRC6` | Nhiệt độ khí xả từng xy-lanh | Trên `500°C` |
+| `TRTI(1)` | Nhiệt độ khí xả vào turbo, xy-lanh 1–3 | Trên `580°C` |
+| `TRTI(2)` | Nhiệt độ khí xả vào turbo, xy-lanh 4–6 | Trên `580°C` |
+| `TRTO` | Nhiệt độ khí xả ra turbo | Trên `500°C` |
+| `TRQ` | Nhiệt độ dầu bôi trơn đầu vào động cơ | Trên `65°C` |
+| `TRWHO` | Nhiệt độ nước làm mát HT đầu ra động cơ | Trên `90°C` |
+| `PTQ` | Áp suất dầu bôi trơn đầu vào động cơ | Dưới `0,35 MPa` |
+| `PTF` | Áp suất dầu nhiên liệu đầu vào động cơ | Dưới `0,35 MPa` |
+| `PTAS` | Áp suất khí khởi động đầu vào động cơ | Dưới `1,5 MPa` |
+| `PTWH` | Áp suất nước làm mát HT đầu vào động cơ | Dưới `0,15 MPa` |
+| `PTWL` | Áp suất nước làm mát LT đầu vào động cơ | Dưới `0,15 MPa` |
+
+Các transmitter, pressure switch và temperature sensor trong bảng được ghi là do Daihatsu cung cấp.
+
+### Các công tắc Alarm và Emergency Stop
+
+| Mark | Chức năng | Tác động | Trạng thái tiếp điểm quan trọng |
+|---|---|---|---|
+| `26WH2` | Nhiệt độ nước HT đầu ra cao | Emergency Stop trên `95°C` | Normally open; `1–3` ON khi tác động |
+| `63Q2` | Áp suất dầu đầu vào thấp | Emergency Stop dưới `0,30 MPa` | Normally open; `1–2` ON khi tác động |
+| `33QL` | Mức dầu sump tank thấp | Alarm | `A–B` OFF khi mức thấp |
+| `33F` | Rò rỉ/vỡ ống dầu nhiên liệu cao áp | Alarm | Normally closed; `1–2` OFF khi tác động |
+| `63QDM` | Chênh áp lọc dầu backwash cao | Alarm trên `0,09 MPa` | Normally closed; `1–3` OFF khi tác động |
+| `63QT` | Áp suất dầu bôi trơn đầu vào turbo thấp | Alarm dưới `0,06 MPa` | Normally closed; `1–3` OFF khi tác động |
+
+Khi kiểm tra bằng đồng hồ hoặc mô phỏng tín hiệu phải chú ý logic tiếp điểm: một số Alarm tác động bằng cách mở tiếp điểm đang đóng, không phải đóng tiếp điểm.
+
+### Tín hiệu tốc độ, interlock và governor
+
+- `SSE1` và `SSE2`: hai speed sensor dạng pulse, phù hợp yêu cầu phải có hai hệ thống phát hiện tốc độ để Ready to Start.
+- `HS`: Handle Switch dùng cho trạng thái standby/RUN; ở vị trí RUN, tiếp điểm `2–4` ON và `1–2` OFF.
+- `TC`: Turning Safety Switch; khi sử dụng turning bar, tiếp điểm `1–3` OFF. Đây là interlock chống khởi động khi dụng cụ quay máy còn gắn.
+- `GM`: governor motor điều khiển tốc độ, dạng electric-control hydraulic governor, nguồn `DC24V` và yêu cầu nguồn dự phòng battery.
+
+### Các van điện từ Start và Shutdown
+
+| Mark | Chức năng | Hành động khi cuộn dây được cấp điện |
+|---|---|---|
+| `88V` | Starting solenoid valve | Thực hiện khởi động động cơ |
+| `88L` | Fuel oil control solenoid valve | Khống chế nhiên liệu trong trình tự khởi động |
+| `5V` | Shutdown solenoid valve — Control | Cắt nhiên liệu |
+| `5S` | Shutdown solenoid valve — Safety & Control | Cắt nhiên liệu |
+
+Các solenoid trên sử dụng `DC24V`, dòng tiêu thụ khoảng `0,7 A`. `5V` và `5S` đều được ghi rõ là **fuel shutdown when solenoid magnetized**. Việc có hai van shutdown cho thấy đường dừng có cả kênh điều khiển và kênh safety/control.
+
+### Thiết bị phụ trợ
+
+- `SVB`: van điện từ bypass bộ làm mát khí LT; nguồn `DC24V, 0,7 A`, phục vụ điều khiển nhiệt độ khí nạp ở tải thấp và được kích khi công suất máy phát dưới `150 kWe`.
+- `BO`: blow-off valve điều khiển SCR; van mở khi cuộn dây được kích, nguồn `AC230V`, một pha, `60 Hz`, `48 W`, khoảng `300 mA`.
+- `FR`: bộ phát vị trí fuel rack, tín hiệu `4–20 mA`, toàn thang `0–36 mm`.
+
+### Lưu ý đấu dây và bảo trì
+
+- Sơ đồ biểu diễn trạng thái chạy bình thường; không được suy luận trạng thái nghỉ chỉ từ vị trí nét vẽ mà không đọc cột Contact/Remark.
+- Dây giữa thiết bị và junction box do Daihatsu thực hiện.
+- Tiết diện dây tiêu chuẩn là `0,75 mm²`, trừ nơi có chỉ định khác.
+- Cuộn van điện từ có diode dập xung; cần giữ đúng cực tính khi đo hoặc thay dây.
+- Governor motor dùng surge killer `ERZV10D390` của Panasonic.
+- Trip switch phải có điện trở giám sát `3,9 kΩ, 1/4 W`. Không được bỏ điện trở này hoặc thay sai trị số vì DECCS có thể báo disconnection/failure hoặc mất khả năng giám sát đứt dây.
+- Khi đo cách điện hoặc cấp nguồn thử, phải tách các module/cảm biến điện tử và tuân thủ hướng dẫn nhà sản xuất để tránh làm hỏng transmitter, diode và surge suppressor.
