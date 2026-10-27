@@ -145,6 +145,29 @@ Tín hiệu Modbus liên quan là `10023`.
 
 Để reset Trip, động cơ phải dừng hoàn toàn, nguyên nhân phải được xử lý và Handle Switch phải được đưa về `OFF`.
 
+### Giải thích thao tác reset trạng thái Emergency Stop
+
+Nguồn: đoạn hướng dẫn tiếng Anh do người dùng cung cấp, bắt đầu bằng “To reset this status…”.
+
+**Dịch nghĩa:** Để xóa trạng thái này, tốc độ quay của động cơ phải bằng không hoàn toàn. Đưa cần vận hành (`HANDLE SWITCH`) về vị trí `OFF`. Khi đó, trạng thái dừng khẩn cấp được hủy, van điện từ dừng khẩn cấp ngừng kích hoạt và hệ thống trở về trạng thái bình thường. Không thể khởi động lại động cơ cho đến khi hoàn thành các thao tác trên.
+
+Trình tự và ý nghĩa:
+
+1. **Chờ động cơ dừng hẳn (`0 rpm`).** “Naught” nghĩa là số không; động cơ còn quay theo quán tính thì chưa đáp ứng điều kiện này. Không được hiểu là chỉ cần tốc độ xuống dưới 300 rpm.
+2. **Đưa `HANDLE SWITCH` về `OFF`.** Đây là thao tác reset được đoạn hướng dẫn yêu cầu. Chỉ chờ động cơ dừng mà chưa thực hiện thao tác này thì chưa hoàn tất quy trình reset.
+3. **Trạng thái Emergency Stop được xóa; emergency stop solenoid valve chuyển OFF.** “Turns off” nghĩa là ngừng kích hoạt điện của solenoid; riêng câu này không xác định van cơ khí đang mở hay đóng.
+4. **Hệ thống thoát trạng thái dừng khẩn cấp đang được giữ.** “Normal status is recovered” không có nghĩa là động cơ tự chạy lại hoặc mọi nguyên nhân sự cố đã được khắc phục.
+5. **Chỉ thực hiện khởi động lại khi hoàn tất reset và đáp ứng các điều kiện khởi động.** Reset là điều kiện cần; vẫn phải xử lý nguyên nhân dừng và kiểm tra các interlock. Vị trí `OFF` dùng cho bước reset; vị trí cần khi khởi động thực hiện theo chế độ Local/Remote và quy trình tương ứng ở phần dưới.
+
+```text
+Emergency Stop → động cơ dừng hoàn toàn (0 rpm)
+               → đưa HANDLE SWITCH về OFF
+               → xóa trạng thái Emergency Stop, solenoid dừng khẩn cấp OFF
+               → kiểm tra điều kiện khởi động trước khi khởi động lại
+```
+
+Đoạn trích không mô tả thao tác nhả nút Emergency Stop, xóa lệnh Emergency Stop từ xa hay ngưỡng phát hiện zero-speed của bộ điều khiển; không suy ra các chi tiết đó chỉ từ đoạn này.
+
 ### Dừng máy nhưng không phải Automatic Trip khi đang chạy
 
 - Nhấn nút Stop.
@@ -526,3 +549,125 @@ Ví dụ:
 - `5S`: Shutdown solenoid thuộc kênh Safety & Control.
 
 Ý nghĩa chính xác cuối cùng phải lấy từ bảng `Mark/Name/Use/Remark/Contact` của Daihatsu, không chỉ từ cách giải mã theo ISA.
+
+## Bổ sung: van 88L, Air Run và Timing Chart
+
+Ngày ghi chú: 2026-10-27.
+
+Nguồn đối chiếu:
+
+- `Start Engine.pdf`: mục 2.3.2–2.3.3, Fig.38–39, trang in 45–46; mục 2.3.5 và 2.6 về Start Failure và Emergency Stop.
+- `FO & Exh piping diagram.pdf`: sơ đồ AQA10036415, đường nhiên liệu và khí xả.
+- `SA piping diagram.pdf`: sơ đồ AQA10036416, đường khí khởi động và khí điều khiển.
+- `Timing chart.pdf`: mục 5.1, Fig.46–48, trang in 59–60, tài liệu INB000095D.
+
+### 88L nằm ở đâu và điều khiển môi chất gì?
+
+Trên sơ đồ SA, cụm bốn van nằm phía trên, gần giữa bản vẽ. Từ trái sang phải:
+
+| Tag | Tên ghi trên bản vẽ | Cổng ra |
+|---|---|---|
+| `88L` | F.O. control magnetic valve | A1 |
+| `5V` | F.O. shut down magnetic valve | A2 |
+| `88V` | Starting magnetic valve | A3 |
+| `5S` | F.O. shut down magnetic valve | A4 |
+
+Đường A1 của 88L nối đến khối `FO control piston & fuel shutdown device`. Đường A2 của 5V nối đến một cổng khác của cùng khối. Bản vẽ không thể hiện chi tiết cơ khí bên trong khối này.
+
+**88L là van điện từ khí nén điều khiển piston FO; dầu FO không đi qua van 88L.** Tên van nói đến chức năng/đối tượng được điều khiển, không phải môi chất đi qua van. Vì vậy, van xuất hiện trên bản vẽ SA, vốn thể hiện cả Starting Air và Control Air.
+
+Theo ký hiệu van 3 cửa, 2 vị trí, hồi bằng lò xo trên sơ đồ SA:
+
+| Trạng thái | Đường khí | Ý nghĩa |
+|---|---|---|
+| 88L ON | Cửa 1 nối cửa 2; cửa R bị chặn | Cấp khí qua A1 đến piston FO |
+| 88L OFF | Cửa 1 bị chặn; cửa 2 nối R | Ngừng cấp khí và xả khí từ nhánh piston FO |
+
+Chuỗi tác động: điện điều khiển 88L → van chuyển đường khí → khí tác động piston FO → piston tác động cơ cấu điều khiển nhiên liệu.
+
+Trên sơ đồ FO & Exh, đường dầu đi từ `From FO line` qua `F.O. filter` đến các `FO injection pump`, rồi đến vòi phun. Có đường `Return FO` và `Relief valve`. Không thấy 88L được vẽ như một van đóng/mở nối tiếp trên đường dầu cấp này.
+
+### Piston FO khác piston động cơ và chưa xác nhận liên kết governor
+
+- Nhánh `88V` điều khiển hệ thống khí khởi động; khí khởi động vào xy-lanh để đẩy piston động cơ và quay trục khuỷu.
+- Nhánh `88L` cấp khí cho piston của cơ cấu điều khiển nhiên liệu; piston này không trực tiếp tạo mô-men quay trục khuỷu.
+- Xả khí khi 88L OFF là giải phóng áp lực tác động ở nhánh piston FO, không phải cấp lực đẩy tạo đà quay.
+- Governor điều chỉnh lượng phun để điều khiển tốc độ. Piston FO có thể liên kết với hệ thanh đòn/thanh răng mà governor cũng tác động, nhưng sơ đồ hiện có chưa xác nhận liên kết đó.
+- Chưa đủ căn cứ để nói piston FO nằm trong governor, gắn trực tiếp với governor, đẩy thanh răng theo chiều nào, hoặc hồi về bằng cơ cấu nào.
+
+Cần bản vẽ cơ khí/hình cắt `FO control piston & fuel shutdown device`, `fuel control mechanism` hoặc `governor linkage` để xác định các chi tiết trên.
+
+### Ý nghĩa ON/OFF của 88L và chức năng khống chế nhiên liệu
+
+Timing chart ghi nhãn Nhật `F.O. 抑制電磁弁(88L)`, trong đó `抑制` mang nghĩa ức chế/hạn chế/khống chế. Nhãn này củng cố cách hiểu 88L phục vụ chức năng khống chế nhiên liệu trong giai đoạn khởi động.
+
+**Đã xác nhận:** 88L cấp/xả khí đến piston FO và chỉ được kích hoạt trong một giai đoạn của trình tự. **Suy luận phù hợp nhưng chưa xác nhận cơ khí:** piston có thể hạn chế lượng nhiên liệu khởi động. Chưa được khẳng định nó chặn thanh răng ở vị trí nào hoặc giới hạn lượng phun bao nhiêu.
+
+Không đồng nhất ba trạng thái: solenoid ON/OFF, có dầu cấp đến bơm cao áp, và có phun dầu vào xy-lanh. 88L OFF không có nghĩa cắt nguồn dầu FO. 88L ON cũng không bảo đảm có phun dầu, như trường hợp Air Run.
+
+Không diễn giải `88L OFF → governor điều khiển` thành governor chỉ bắt đầu làm việc khi 88L OFF. Tài liệu xác nhận tác động khí qua 88L kết thúc và máy tiếp tục chạy dưới sự điều chỉnh của governor, không xác định thời điểm governor bắt đầu tác động.
+
+### Khởi động LOCAL so với Air Run
+
+| Nội dung | Khởi động LOCAL | Air Run |
+|---|---|---|
+| ENGINE MODE | LOCAL | LOCAL |
+| Cần vận hành | RUN | STOP theo mục 2.3.3; Fig.48 cũng dùng từ OFF trong chú thích |
+| Mục đích | Máy nổ và chạy bằng nhiên liệu | Quay máy bằng khí, thổi sạch khí chưa cháy |
+| Nhiên liệu phun | Có | Không |
+| START | Nhấn giữ để khởi động theo hướng dẫn | Nhấn giữ 3–4 giây rồi thả theo mục 2.3.3 |
+| 88V | OFF khi đạt ngưỡng khởi động | OFF ngay khi thả START |
+| 88L | OFF sau khoảng duy trì quy định | Theo mục 2.3.3/Fig.39, giữ đến khi máy dừng hoàn toàn rồi OFF |
+
+Air Run vẫn có tốc độ quay do khí nén. Câu “rotational speed ... does not increase” trong hướng dẫn được hiểu theo ngữ cảnh là máy không nổ và tăng tốc lên trạng thái chạy bằng nhiên liệu, không phải trục khuỷu đứng yên.
+
+Cả hai chế độ đều có thể kích hoạt piston FO nhưng kết quả phun nhiên liệu khác nhau do trạng thái RUN/STOP và cơ cấu điều khiển liên quan. Không suy ra cơ cấu bên trong chỉ từ biểu đồ ON/OFF.
+
+### Fig.46: khởi động và dừng bình thường
+
+Các giá trị dưới đây là giá trị ghi trên timing chart; cần đối chiếu cài đặt máy thực tế khi sử dụng.
+
+| Mốc | Hoạt động |
+|---|---|
+| Nhận START | 88V và 88L ON |
+| Đạt `S#14 = 300 rpm` | 88V OFF; nhận trạng thái ENGINE RUN; bắt đầu các khoảng ST2/ST4 |
+| Sau #14 thêm `ST2 = 15 giây` | 88L OFF |
+| Sau #14 thêm `ST4 = 30 giây` | Hết repose nhóm #14T |
+| Có STOP bình thường | 5V ON; không thể hiện 5S được kích hoạt |
+| Giảm tốc và xác nhận dừng | Biểu đồ dùng ngưỡng `Send = 30 rpm` cùng `ST3 = 20 giây` |
+| Hoàn thành trình tự dừng | 5V OFF; trở lại READY nếu đủ các interlock |
+
+Ví dụ: nếu đạt #14 tại giây thứ 4 kể từ START, 88L OFF khoảng giây thứ 19 và #14T hết repose khoảng giây thứ 34. Mốc 4 giây chỉ là ví dụ, không phải giá trị đặt.
+
+Mục 2.3.2 còn nói ngưỡng ngắt 88V có thể là 150 rpm tùy cài đặt; không áp dụng 300 rpm như giá trị bất biến cho mọi cấu hình.
+
+### Fig.47: dừng khẩn cấp
+
+- Khi có Emergency Stop: cả 5V và 5S ON.
+- 5V kết thúc tác động theo trình tự xác nhận dừng có ST3.
+- 5S giữ ON đến khi thực hiện HANDLE SW RESET; không tự kết thúc chỉ vì tốc độ đã giảm về không.
+- Sau xác nhận dừng vẫn chưa READY nếu chưa reset. Hướng dẫn yêu cầu động cơ dừng hoàn toàn và đưa handle về OFF.
+- `Send = 30 rpm` là ngưỡng dùng trong logic, không phải cho phép coi máy còn quay là đã đứng yên. Không bỏ qua yêu cầu dừng hoàn toàn của hướng dẫn vận hành.
+
+### Fig.48: Start Failure và Air Run
+
+Start Failure áp dụng cho REMOTE, handle RUN. Timer thất bại là 20 giây tính từ START. Nếu không đạt ngưỡng 300 rpm trong thời gian này, hệ thống phát hiện Start Failure, cho 88V/88L OFF và 5V/5S ON để dừng. Sau đó cần reset handle trước khi được phép khởi động lại.
+
+Air Run áp dụng cho LOCAL, handle STOP/OFF. Thả START thì 88V OFF; hệ thống trở lại READY sau trình tự xác nhận dừng.
+
+**Điểm thiếu cần giữ lại khi đối chiếu:** phần Air Run của Fig.48 không vẽ rõ khoảng ON của 88L, trong khi mục 2.3.3 và Fig.39 thể hiện 88L hoạt động và chỉ OFF sau khi máy dừng. Không dùng phần bỏ trống ở Fig.48 để kết luận Air Run không kích hoạt 88L; cũng không áp dụng ST2 của khởi động thành công sang Air Run khi chưa có xác nhận.
+
+### Repose và điểm khác nhau giữa các tài liệu
+
+Theo Fig.46:
+
+- Emergency Stop, Overspeed và Oil Mist High được giám sát liên tục.
+- Trip áp suất dầu bôi trơn thấp bắt đầu được giám sát sau `#14 + ST4`.
+- Trip nhiệt độ nước HT cao được vẽ bắt đầu từ `#14`, không chờ ST4.
+- Repose Starting kéo dài trong khi van khởi động hoạt động và thêm 5 giây.
+- Nhóm khí xả có điều kiện nhiệt độ khí xả trung bình trên 200°C.
+- Nhóm chênh áp lọc dầu có điều kiện nhiệt độ dầu trên 45°C.
+
+**Lưu ý bổ sung cho bảng Automatic Trip ở phần trước:** bảng trong `Start Engine.pdf`, mục 2.6, ghi cả áp suất dầu thấp và nhiệt độ nước HT cao được giám sát từ #14T; nhưng Fig.46 vẽ riêng Trip HT từ #14. Đây là khác biệt giữa hai phần tài liệu, chưa được giải quyết. Không chọn một mốc làm logic PLC chính thức khi chưa đối chiếu phiên bản tài liệu và cấu hình DECSS của máy.
+
+Timing chart xác nhận thời điểm điều khiển và bảo vệ, không thay thế bản vẽ cơ khí để giải thích piston FO tác động cụ thể lên governor/thanh răng như thế nào.
